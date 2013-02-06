@@ -36,5 +36,9 @@
   },
   "keywords": [
     "gruntplugin"
-  ]
+  ],
+  "dependencies": {
+    "grunt-lib-stylus": "~0.1.0",
+    "requirejs": "~2.1.4"
+  }
 }
