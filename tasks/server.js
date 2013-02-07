@@ -28,11 +28,12 @@ module.exports = function(grunt) {
       favicon: "favicon.ico",
       index: "index.html",
 
-      // Url root path.
+      // Url root paths.  These are useful to determine where application vs
+      // vendor code exists in the path.
       root: "/",
       appDir: "app",
 
-      // Where on the filesystem files are.
+      // Where on the filesystem files are, can be absolute or relative.
       prefix: ".",
 
       // Should this server exist forever or die immediately after all tasks
@@ -49,16 +50,22 @@ module.exports = function(grunt) {
         // Script pre-processors.
         //".coffee": require("grunt-lib-coffee").compile,
         //".ts": require("grunt-lib-typescript").compile,
-        ".js": function(buffer, req, res, next) {
+        "\.js$": function(buffer, req, res, next) {
+          // Only process JavaScript that are required modules, this means
+          // bailing out early if not in the module path.
           if (req.url.indexOf(options.root + options.appDir) !== 0) {
             return next();
           }
 
+          // The module name is just the JavaScript file stripped of the
+          // host and location.
           var moduleName = req.url.split(options.root + options.appDir)[1];
           moduleName = moduleName.slice(1);
 
+          // This method allows hooking into the RequireJS toolchain.
           requirejs.tools.useLib(function(require) {
-            // Convert to AMD if using CommonJS.
+            // Convert to AMD if using CommonJS, by default the conversion
+            // will ignore modules that already contain a define.
             require(["commonJs"], function(commonJs) {
               var wrapped = commonJs.convert(moduleName, String(buffer));
               res.header("Content-type", "application/javascript");
@@ -68,7 +75,7 @@ module.exports = function(grunt) {
         },
 
         // Style pre-processors.
-        ".styl": function(buffer, req, res, next) {
+        "\.styl$": function(buffer, req, res, next) {
           var stylus = require("grunt-lib-stylus").init(grunt);
           var contentType = "text/css";
           var opts = {
@@ -76,10 +83,8 @@ module.exports = function(grunt) {
           };
 
           // Compile the source.
-          stylus.compile.call(req, String(buffer), opts, function(contents) {
-            // Set the content-type.
+          stylus.compile(String(buffer), opts, function(contents) {
             res.header("Content-type", contentType);
-            // Contents are good, ship it!
             res.send(contents);
           });
         },
@@ -88,14 +93,13 @@ module.exports = function(grunt) {
         //".scss": require("grunt-lib-scss").compile,
       },
 
-      // This object allows you to remap any resource.
-      mappings: {},
-
-      // These folders contain physical files that take precendence over the
-      // `pushState` redirection.
-      folders: fs.readdirSync(CWD).filter(function(file) {
+      // These mappings take precedence over `pushState` redirection.
+      map: fs.readdirSync(CWD).filter(function(file) {
         return fs.statSync(file).isDirectory();
-      }),
+      }).reduce(function(memo, current) {
+        memo[current] = current;
+        return memo;
+      }, {}),
 
       // Any express-compatible server will work here.
       server: null,
@@ -125,8 +129,10 @@ module.exports = function(grunt) {
     // Go through each compiler and provide an identical serving experience.
     _.each(options.middleware, function(callback, extension) {
       // Investigate if there is a better way of writing this.
-      site.get(new RegExp(extension + "$"), function(req, res, next) {
+      site.get(new RegExp(extension), function(req, res, next) {
         var url = req.url;
+        // If there are query parameters, remove them.
+        url = url.split("?")[0];
 
         // Read in the file contents.
         fs.readFile("." + url, function(err, buffer) {
@@ -135,19 +141,15 @@ module.exports = function(grunt) {
       });
     });
 
-    // For all modules, ensure they are properly wrapped.
-    //site.get(/.js$/, function(req, res, next) {
-    //});
-
     // Map static folders to take precedence over redirection.
-    options.folders.reverse().forEach(function(name, i) {
+    Object.keys(options.map).reverse().forEach(function(name) {
       site.get(options.root + name + "/*", function(req, res, next) {
         // Find filename.
         var filename = req.url.slice((options.root + name).length)
         // If there are query parameters, remove them.
         filename = filename.split("?")[0];
 
-        res.sendfile(path.join(options.folders[i] + filename));
+        res.sendfile(path.join(options.map[name] + filename));
       });
     });
 
