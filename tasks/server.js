@@ -21,9 +21,8 @@ module.exports = function(grunt) {
   var _ = grunt.util._;
 
   grunt.registerTask("server", "Run development server.", function() {
-    // Merge defaults and declarative options.
-    var options = this.options({
 
+    var options = {
       // Fundamentals.
       favicon: "favicon.ico",
       index: "index.html",
@@ -48,8 +47,8 @@ module.exports = function(grunt) {
       // Register default compiler mappings.
       middleware: {
         // Script pre-processors.
-        //".coffee": require("grunt-lib-coffee").compile,
-        //".ts": require("grunt-lib-typescript").compile,
+        //"\.coffee$": require("grunt-lib-coffee").compile,
+        //"\.ts$": require("grunt-lib-typescript").compile,
         "\.js$": function(buffer, req, res, next) {
           // Only process JavaScript that are required modules, this means
           // bailing out early if not in the module path.
@@ -89,8 +88,8 @@ module.exports = function(grunt) {
           });
         },
         
-        //".less": require("grunt-lib-less").compile,
-        //".scss": require("grunt-lib-scss").compile,
+        //"\.less$": require("grunt-lib-less").compile,
+        //"\.scss$": require("grunt-lib-scss").compile,
       },
 
       // These mappings take precedence over `pushState` redirection.
@@ -103,9 +102,21 @@ module.exports = function(grunt) {
 
       // Any express-compatible server will work here.
       server: null,
+    };
+    
+    var configOptions = grunt.config(["server"].concat(_.toArray(arguments)));
 
-    // Pull nested options in.
-    }, grunt.config(["server"].concat(_.toArray(arguments))));
+    _.each(options, function(value, key) {
+      // Only change defaults that have overrides.
+      if (key in configOptions) {
+        // Allow objects to be extended and overwritten.
+        if (_.isObject(value)) {
+          options[key] = _.extend(value, configOptions[key]);
+        } else {
+          options[key] = configOptions[key];
+        }
+      }
+    });
 
     // Run forever and disable crashing.
     if (options.forever === true) {
@@ -119,6 +130,7 @@ module.exports = function(grunt) {
 
     // Run the server.
     run(options);
+
   });
 
   // Actually run the server...
@@ -136,6 +148,11 @@ module.exports = function(grunt) {
 
         // Read in the file contents.
         fs.readFile("." + url, function(err, buffer) {
+          // File wasn't found.
+          if (err) {
+            return next();
+          }
+
           callback(buffer, req, res, next);
         });
       });
@@ -143,7 +160,8 @@ module.exports = function(grunt) {
 
     // Map static folders to take precedence over redirection.
     Object.keys(options.map).reverse().forEach(function(name) {
-      site.get(options.root + name + "/*", function(req, res, next) {
+      var dirMatch = grunt.file.isDir(name) ? "/*" : "";
+      site.get(options.root + name + dirMatch, function(req, res, next) {
         // Find filename.
         var filename = req.url.slice((options.root + name).length)
         // If there are query parameters, remove them.
