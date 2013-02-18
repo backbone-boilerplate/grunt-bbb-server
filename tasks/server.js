@@ -140,8 +140,8 @@ module.exports = function(grunt) {
     if (_.isBoolean(options.ssl)) {
       // Load the SSL certificates, in case they are needed.
       options.ssl = {
-        key: fs.readFileSync(__dirname + "/ssl/server.key"),
-        cert: fs.readFileSync(__dirname + "/ssl/server.crt")
+        key: fs.readFileSync(__dirname + "/ssl/server.key", "utf8"),
+        cert: fs.readFileSync(__dirname + "/ssl/server.crt", "utf8")
       };
     }
 
@@ -195,7 +195,7 @@ module.exports = function(grunt) {
     Object.keys(options.proxy).sort().reverse().forEach(function(name) {
       var target = options.proxy[name];
 
-      var proxy = new httpProxy.HttpProxy({
+      var proxyOptions = {
         // This can be a string or an object.
         target: target,
 
@@ -206,7 +206,27 @@ module.exports = function(grunt) {
         enable : {
           xforward: false
         }
-      });
+      };
+
+      // Ensure the https proxy settings are configured here as well.
+      if (_.isBoolean(target.https) && target.https) {
+        proxyOptions.https = {
+          key: fs.readFileSync(__dirname + "/ssl/server.key", "utf8"),
+          cert: fs.readFileSync(__dirname + "/ssl/server.crt", "utf8")
+        };
+      }
+
+      var proxy = new httpProxy.HttpProxy(proxyOptions);
+
+      // Same thing for these, if you have https boolean set to true, default
+      // to internal keys/certs.
+      if (_.isBoolean(target.https) && target.https) {
+        // Load the SSL certificates, in case they are needed.
+        target.https = {
+          key: fs.readFileSync(__dirname + "/ssl/server.key", "utf8"),
+          cert: fs.readFileSync(__dirname + "/ssl/server.crt", "utf8")
+        };
+      }
 
       site.all(options.root + name, function(req, res, next) {
         // Allow for header overrides.
