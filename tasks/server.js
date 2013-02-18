@@ -17,10 +17,18 @@ module.exports = function(grunt) {
   // External libs.
   var express = require("express");
   var requirejs = require("requirejs");
+  var gzip = require("gzip-js");
+  var httpProxy = require("http-proxy");
 
   var _ = grunt.util._;
 
   grunt.registerTask("server", "Run development server.", function() {
+
+    // Load the SSL certificates, in case they are needed.
+    var ssl = {
+      key: fs.readFileSync(__dirname + "/ssl/server.key"),
+      cert: fs.readFileSync(__dirname + "/ssl/server.crt")
+    };
 
     var options = {
       // Fundamentals.
@@ -68,7 +76,8 @@ module.exports = function(grunt) {
             require(["commonJs"], function(commonJs) {
               var wrapped = commonJs.convert(moduleName, String(buffer));
               res.header("Content-type", "application/javascript");
-              res.send(wrapped);
+              next(wrapped);
+              //res.send(wrapped);
             });
           });
         },
@@ -84,7 +93,8 @@ module.exports = function(grunt) {
           // Compile the source.
           stylus.compile(String(buffer), opts, function(contents) {
             res.header("Content-type", contentType);
-            res.send(contents);
+            next(contents);
+            //res.send(contents);
           });
         },
         
@@ -100,12 +110,15 @@ module.exports = function(grunt) {
         return memo;
       }, {}),
 
+      proxy: {},
+
       // Any express-compatible server will work here.
       server: null,
     };
     
     var configOptions = grunt.config(["server"].concat(_.toArray(arguments)));
 
+    // Merge options from configuration.
     _.each(options, function(value, key) {
       // Only change defaults that have overrides.
       if (key in configOptions) {
@@ -138,6 +151,9 @@ module.exports = function(grunt) {
     // If the server is already available use it.
     var site = options.server ? options.server() : express();
 
+    // TODO Determine if this is necessary.
+    //site.use(require("connect-restreamer")());
+
     // Go through each compiler and provide an identical serving experience.
     _.each(options.middleware, function(callback, extension) {
       // Investigate if there is a better way of writing this.
@@ -159,7 +175,7 @@ module.exports = function(grunt) {
     });
 
     // Map static folders to take precedence over redirection.
-    Object.keys(options.map).reverse().forEach(function(name) {
+    Object.keys(options.map).sort().reverse().forEach(function(name) {
       var dirMatch = grunt.file.isDir(name) ? "/*" : "";
       site.get(options.root + name + dirMatch, function(req, res, next) {
         // Find filename.
@@ -169,6 +185,35 @@ module.exports = function(grunt) {
 
         res.sendfile(path.join(options.map[name] + filename));
       });
+    });
+
+    // Very similar to map, except that the mapped path is another server.
+    Object.keys(options.proxy).sort().reverse().forEach(function(name) {
+      var proxy = new httpProxy.HttpProxy({
+        // This can be a string or an object.
+        target: options.proxy[name],
+
+        // Do not change the origin, this can affect how servers respond.
+        changeOrigin: false,
+
+        // Remove the forwarded headers, make it feel seamless.
+        enable : {
+          xforward: false
+        }
+      });
+
+      site.all(options.root + name, function(req, res, next) {
+        proxy.proxyRequest(req, res);
+      });
+    });
+
+    // Compression middleware.
+    site.all("*", function(content, req, res, next) {
+      if (content) {
+        res.send(content);
+      } else {
+        next();
+      }
     });
 
     // Ensure all routes go home, client side app..
