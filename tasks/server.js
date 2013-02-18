@@ -13,6 +13,7 @@ module.exports = function(grunt) {
 
   var path = require("path");
   var fs = require("fs");
+  var https = require("https");
 
   // External libs.
   var express = require("express");
@@ -23,12 +24,6 @@ module.exports = function(grunt) {
   var _ = grunt.util._;
 
   grunt.registerTask("server", "Run development server.", function() {
-
-    // Load the SSL certificates, in case they are needed.
-    var ssl = {
-      key: fs.readFileSync(__dirname + "/ssl/server.key"),
-      cert: fs.readFileSync(__dirname + "/ssl/server.crt")
-    };
 
     var options = {
       // Fundamentals.
@@ -141,6 +136,15 @@ module.exports = function(grunt) {
       grunt.option("force", true);
     }
 
+    // Make this value more meaningful otherwise you can provide your own keys.
+    if (_.isBoolean(options.ssl)) {
+      // Load the SSL certificates, in case they are needed.
+      options.ssl = {
+        key: fs.readFileSync(__dirname + "/ssl/server.key"),
+        cert: fs.readFileSync(__dirname + "/ssl/server.crt")
+      };
+    }
+
     // Run the server.
     run(options);
 
@@ -189,9 +193,11 @@ module.exports = function(grunt) {
 
     // Very similar to map, except that the mapped path is another server.
     Object.keys(options.proxy).sort().reverse().forEach(function(name) {
+      var target = options.proxy[name];
+
       var proxy = new httpProxy.HttpProxy({
         // This can be a string or an object.
-        target: options.proxy[name],
+        target: target,
 
         // Do not change the origin, this can affect how servers respond.
         changeOrigin: false,
@@ -203,6 +209,11 @@ module.exports = function(grunt) {
       });
 
       site.all(options.root + name, function(req, res, next) {
+        // Allow for header overrides.
+        _.each(target.headers, function(val, name) {
+          req.headers[name] = val;
+        });
+
         proxy.proxyRequest(req, res);
       });
     });
@@ -221,10 +232,16 @@ module.exports = function(grunt) {
       fs.createReadStream(options.index).pipe(res);
     });
 
-    // Start listening.
-    site.listen(options.port, options.host);
-
     // Echo out a message alerting the user that the server is running.
-    console.log("Listening on http://" + options.host + ":" + options.port);
+    console.log("Listening on", (options.ssl ? "https" : "http") + "://" +
+      options.host + ":" + options.port);
+
+    // Start listening.
+    if (!options.ssl) {
+      return site.listen(options.port, options.host);
+    }
+
+    // Create the SSL server instead...
+    https.createServer(options.ssl, site).listen(options.port, options.host);
   }
 };
