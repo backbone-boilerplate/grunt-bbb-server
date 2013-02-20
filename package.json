@@ -41,6 +41,7 @@
     "grunt-lib-stylus": "~0.1",
     "requirejs": "~2.1",
     "express": "~3.1",
-    "gzip-js": "~0.3.1"
+    "gzip-js": "~0.3.1",
+    "http-proxy": "~0.8.7"
   }
 }

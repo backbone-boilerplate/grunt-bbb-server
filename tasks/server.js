@@ -137,7 +137,7 @@ module.exports = function(grunt) {
     }
 
     // Make this value more meaningful otherwise you can provide your own keys.
-    if (_.isBoolean(options.ssl)) {
+    if (_.isBoolean(options.ssl) && options.ssl) {
       // Load the SSL certificates, in case they are needed.
       options.ssl = {
         key: fs.readFileSync(__dirname + "/ssl/server.key", "utf8"),
