@@ -154,6 +154,7 @@ module.exports = function(grunt) {
   function run(options) {
     // If the server is already available use it.
     var site = options.server ? options.server() : express();
+    var protocol = options.ssl ? "https" : "http";
 
     // TODO Determine if this is necessary.
     //site.use(require("connect-restreamer")());
@@ -194,6 +195,7 @@ module.exports = function(grunt) {
     // Very similar to map, except that the mapped path is another server.
     Object.keys(options.proxy).sort().reverse().forEach(function(name) {
       var target = options.proxy[name];
+      var protocol = target.https ? "https" : "http";
 
       var proxyOptions = {
         // This can be a string or an object.
@@ -229,10 +231,9 @@ module.exports = function(grunt) {
       }
 
       site.all(options.root + name, function(req, res, next) {
-        // Allow for header overrides.
-        _.each(target.headers, function(val, name) {
-          req.headers[name] = val;
-        });
+        _.extend(req.headers, {
+          referer: protocol + "://" + options.host + ":" + options.port
+        }, target.headers);
 
         proxy.proxyRequest(req, res);
       });
@@ -253,8 +254,8 @@ module.exports = function(grunt) {
     });
 
     // Echo out a message alerting the user that the server is running.
-    console.log("Listening on", (options.ssl ? "https" : "http") + "://" +
-      options.host + ":" + options.port);
+    console.log("Listening on", protocol + "://" + options.host + ":" +
+      options.port);
 
     // Start listening.
     if (!options.ssl) {
