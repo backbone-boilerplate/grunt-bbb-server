@@ -235,7 +235,7 @@ module.exports = function(grunt) {
       site.all(options.root + name, function(req, res, next) {
         var referer = protocol + "://" + options.host;
 
-        if (options.port !== 80) {
+        if (options.port !== "80") {
           referer += ":" + options.port;
         }
 
