@@ -218,6 +218,7 @@ module.exports = function(grunt) {
         };
       }
 
+      // Initialize the actual proxy object.
       var proxy = new httpProxy.HttpProxy(proxyOptions);
 
       // Same thing for these, if you have https boolean set to true, default
@@ -230,11 +231,21 @@ module.exports = function(grunt) {
         };
       }
 
+      // Listen on all HTTP verbs for seamless proxying.
       site.all(options.root + name, function(req, res, next) {
+        var referer = protocol + "://" + options.host;
+
+        if (options.port !== 80) {
+          referer += ":" + options.port;
+        }
+
+        // This will set the most likely default for the referer, but allows
+        // it to be overwritten by passing a custom `headers` object.
         _.extend(req.headers, {
-          referer: protocol + "://" + options.host + ":" + options.port
+          referer: referer
         }, target.headers);
 
+        // Make the proxy request.
         proxy.proxyRequest(req, res);
       });
     });
@@ -242,10 +253,10 @@ module.exports = function(grunt) {
     // Compression middleware.
     site.all("*", function(content, req, res, next) {
       if (content) {
-        res.send(content);
-      } else {
-        next();
+        return res.send(content);
       }
+
+      next();
     });
 
     // Ensure all routes go home, client side app..

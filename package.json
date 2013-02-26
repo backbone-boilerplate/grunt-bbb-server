@@ -1,7 +1,7 @@
 {
   "name": "grunt-bbb-server",
   "description": "Runs the development server.",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "homepage": "https://github.com/backbone-boilerplate/grunt-bbb-server",
   "author": {
     "name": "Tim Branyen",
