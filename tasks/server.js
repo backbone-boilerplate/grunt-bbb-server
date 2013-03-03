@@ -30,6 +30,9 @@ module.exports = function(grunt) {
       favicon: "favicon.ico",
       index: "index.html",
 
+      // Should this router automatically handle pushState requests.
+      pushState: true,
+
       // Url root paths.  These are useful to determine where application vs
       // vendor code exists in the path.
       root: "/",
@@ -260,9 +263,11 @@ module.exports = function(grunt) {
     });
 
     // Ensure all routes go home, client side app..
-    site.all("*", function(req, res) {
-      fs.createReadStream(options.index).pipe(res);
-    });
+    if (options.pushState) {
+      site.all("*", function(req, res) {
+        fs.createReadStream(options.index).pipe(res);
+      });
+    }
 
     // Echo out a message alerting the user that the server is running.
     console.log("Listening on", protocol + "://" + options.host + ":" +
