@@ -184,7 +184,7 @@ module.exports = function(grunt) {
 
     // Map static folders to take precedence over redirection.
     Object.keys(options.map).sort().reverse().forEach(function(name) {
-      var dirMatch = grunt.file.isDir(name) ? "/*" : "";
+      var dirMatch = grunt.file.isDir(options.map[name]) ? "/*" : "";
       site.get(options.root + name + dirMatch, function(req, res, next) {
         // Find filename.
         var filename = req.url.slice((options.root + name).length)
