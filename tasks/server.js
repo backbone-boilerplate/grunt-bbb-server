@@ -21,6 +21,7 @@ module.exports = function(grunt) {
   var gzip = require("gzip-js");
   var httpProxy = require("http-proxy");
 
+  // Shorthand Lo-Dash.
   var _ = grunt.util._;
 
   grunt.registerTask("server", "Run development server.", function() {
@@ -75,12 +76,11 @@ module.exports = function(grunt) {
               var wrapped = commonJs.convert(moduleName, String(buffer));
               res.header("Content-type", "application/javascript");
               next(wrapped);
-              //res.send(wrapped);
             });
           });
         },
 
-        // Style pre-processors.
+        // Stylus.
         "\.styl$": function(buffer, req, res, next) {
           var stylus = require("grunt-lib-stylus").init(grunt);
           var contentType = "text/css";
@@ -92,12 +92,38 @@ module.exports = function(grunt) {
           stylus.compile(String(buffer), opts, function(contents) {
             res.header("Content-type", contentType);
             next(contents);
-            //res.send(contents);
           });
         },
         
-        //"\.less$": require("grunt-lib-less").compile,
-        //"\.scss$": require("grunt-lib-scss").compile,
+        // LESS.
+        "\.less": function(buffer, req, res, next) {
+          var less = require("grunt-lib-less").init(grunt);
+          var contentType = "text/css";
+          var opts = {
+            paths: ["." + req.url.split("/").slice(0, -1).join("/") + "/"]
+          };
+
+          // Compile the source.
+          less.compile(String(buffer), opts, function(contents) {
+            res.header("Content-type", contentType);
+            next(contents);
+          });
+        },
+
+        // SCSS.
+        "\.scss": function(buffer, req, res, next) {
+          var less = require("grunt-lib-less").init(grunt);
+          var contentType = "text/css";
+          var opts = {
+            paths: ["." + req.url.split("/").slice(0, -1).join("/") + "/"]
+          };
+
+          // Compile the source.
+          less.compile(String(buffer), opts, function(contents) {
+            res.header("Content-type", contentType);
+            next(contents);
+          });
+        },
       },
 
       // These mappings take precedence over `pushState` redirection.
@@ -159,8 +185,10 @@ module.exports = function(grunt) {
     var site = options.server ? options.server() : express();
     var protocol = options.ssl ? "https" : "http";
 
-    // TODO Determine if this is necessary.
-    //site.use(require("connect-restreamer")());
+    // Allow compression to be disabled.
+    if (options.gzip !== false) {
+      site.use(express.compress());
+    }
 
     // Go through each compiler and provide an identical serving experience.
     _.each(options.middleware, function(callback, extension) {
