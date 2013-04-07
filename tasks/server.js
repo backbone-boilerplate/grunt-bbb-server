@@ -38,6 +38,7 @@ module.exports = function(grunt) {
       // vendor code exists in the path.
       root: "/",
       appDir: "app",
+      testDir: "test",
 
       // Where on the filesystem files are, can be absolute or relative.
       prefix: ".",
@@ -57,15 +58,21 @@ module.exports = function(grunt) {
         //"\.coffee$": require("grunt-lib-coffee").compile,
         //"\.ts$": require("grunt-lib-typescript").compile,
         "\.js$": function(buffer, req, res, next) {
+          var appDir = options.root + options.appDir;
+          var testDir = options.root + options.testDir;
+          
+          var noApp = req.url.indexOf(appDir) !== 0;
+          var noTest = req.url.indexOf(testDir) !== 0;
+
           // Only process JavaScript that are required modules, this means
           // bailing out early if not in the module path.
-          if (req.url.indexOf(options.root + options.appDir) !== 0) {
+          if (noApp && (noTest || req.url.indexOf("vendor") > 0)) {
             return next();
           }
 
           // The module name is just the JavaScript file stripped of the
           // host and location.
-          var moduleName = req.url.split(options.root + options.appDir)[1];
+          var moduleName = req.url.split(noApp ? testDir : appDir)[1];
           moduleName = moduleName.slice(1);
 
           // This method allows hooking into the RequireJS toolchain.
