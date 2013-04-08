@@ -202,11 +202,15 @@ module.exports = function(grunt) {
       // Investigate if there is a better way of writing this.
       site.get(new RegExp(extension), function(req, res, next) {
         var url = req.url;
+
         // If there are query parameters, remove them.
         url = url.split("?")[0];
 
+        // Determine the correct asset path.
+        var path = options.map[url.slice(1)] || "." + url;
+
         // Read in the file contents.
-        fs.readFile("." + url, function(err, buffer) {
+        fs.readFile(path, function(err, buffer) {
           // File wasn't found.
           if (err) {
             return next();
@@ -272,15 +276,17 @@ module.exports = function(grunt) {
       // Listen on all HTTP verbs for seamless proxying.
       site.all(options.root + name, function(req, res, next) {
         var referer = protocol + "://" + options.host;
+        var origin = protocol + "://" + proxyOptions.target.host;
 
         if (options.port !== "80") {
           referer += ":" + options.port;
         }
 
-        // This will set the most likely default for the referer, but allows
-        // it to be overwritten by passing a custom `headers` object.
+        // Transparently set the referer, origin, and host headers.
         _.extend(req.headers, {
-          referer: referer
+          referer: origin,
+          origin: origin,
+          host: proxyOptions.target.host
         }, target.headers);
 
         // Make the proxy request.
