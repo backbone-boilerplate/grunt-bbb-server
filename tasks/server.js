@@ -24,9 +24,9 @@ module.exports = function(grunt) {
   // Shorthand Lo-Dash.
   var _ = grunt.util._;
 
-  grunt.registerTask("server", "Run development server.", function() {
+  grunt.registerMultiTask("server", "Run development server.", function() {
 
-    var options = {
+    var options = this.options({
       // Fundamentals.
       favicon: "favicon.ico",
       index: "index.html",
@@ -37,8 +37,7 @@ module.exports = function(grunt) {
       // Url root paths.  These are useful to determine where application vs
       // vendor code exists in the path.
       root: "/",
-      appDir: "app",
-      testDir: "test",
+      moduleDirs: ["app", "test"],
 
       // Where on the filesystem files are, can be absolute or relative.
       prefix: ".",
@@ -51,6 +50,11 @@ module.exports = function(grunt) {
       ssl: ENV.SSL || false,
       host: ENV.HOST || "127.0.0.1",
       port: ENV.PORT || 8000,
+
+      proxy: {},
+
+      // Any express-compatible server will work here.
+      server: null,
 
       // Register default compiler mappings.
       middleware: {
@@ -143,35 +147,15 @@ module.exports = function(grunt) {
           });
         },
       },
-
-      // These mappings take precedence over `pushState` redirection.
-      map: fs.readdirSync(CWD).filter(function(file) {
-        return fs.statSync(file).isDirectory();
-      }).reduce(function(memo, current) {
-        memo[current] = current;
-        return memo;
-      }, {}),
-
-      proxy: {},
-
-      // Any express-compatible server will work here.
-      server: null,
-    };
-    
-    var configOptions = grunt.config(["server"].concat(_.toArray(arguments)));
-
-    // Merge options from configuration.
-    _.each(options, function(value, key) {
-      // Only change defaults that have overrides.
-      if (key in configOptions) {
-        // Allow objects to be extended and overwritten.
-        if (_.isObject(value)) {
-          options[key] = _.extend(value, configOptions[key]);
-        } else {
-          options[key] = configOptions[key];
-        }
-      }
     });
+
+    // Merge maps together.
+    options.map = _.extend({}, options.map, fs.readdirSync(CWD).filter(function(file) {
+      return fs.statSync(file).isDirectory();
+    }).reduce(function(memo, current) {
+      memo[current] = current;
+      return memo;
+    }, {}));
 
     // Run forever and disable crashing.
     if (options.forever === true) {
