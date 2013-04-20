@@ -81,6 +81,17 @@ module.exports = function(grunt) {
             // will ignore modules that already contain a define.
             require(["commonJs"], function(commonJs) {
               var wrapped = commonJs.convert(moduleName, String(buffer));
+              var noDefine = wrapped.indexOf("define(") === -1;
+              var noConfig = wrapped.indexOf("require.config") === -1;
+              
+              if (noDefine && noConfig) {
+                wrapped = [
+                  "define(function(require, exports, module) {",
+                    wrapped,
+                  "});"
+                ].join("\n");
+              }
+
               res.header("Content-type", "application/javascript");
               next(wrapped);
             });
@@ -286,8 +297,13 @@ module.exports = function(grunt) {
         _.extend(req.headers, {
           referer: origin,
           origin: origin,
-          host: proxyOptions.target.host
+          host: proxyOptions.target.host,
+          accept: req.headers.accept || "*/*"
         }, target.headers);
+
+        if (String(req.headers.accept) === "undefined") {
+          req.headers.accept = "*/*";
+        }
 
         // Make the proxy request.
         proxy.proxyRequest(req, res);
