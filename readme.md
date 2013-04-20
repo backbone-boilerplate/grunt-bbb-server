@@ -1,6 +1,13 @@
-# grunt-bbb-server #
+![](https://github.com/tbranyen/backbone-boilerplate/raw/assets/header.png)
+
+Backbone Boilerplate Server
+===========================
 
 > Runs a client-side development server.
+
+**v0.1.0-wip** [![Build
+Status](https://travis-ci.org/backbone-boilerplate/grunt-bbb-server.png?branch=master)](https://travis-ci.org/backbone-boilerplate/grunt-bbb-server)
+
 
 ## Getting Started ##
 _If you haven't used [grunt][] before, be sure to check out the [Getting Started][] guide._
