@@ -1,7 +1,7 @@
 {
   "name": "grunt-bbb-server",
   "description": "Runs the development server.",
-  "version": "0.1.0-alpha.9",
+  "version": "0.1.0-alpha.10",
   "homepage": "https://github.com/backbone-boilerplate/grunt-bbb-server",
   "author": {
     "name": "Tim Branyen",
@@ -39,6 +39,7 @@
   ],
   "dependencies": {
     "grunt-lib-stylus": "~0.1",
+    "grunt-lib-less": "~0.1",
     "requirejs": "~2.1",
     "express": "~3.1",
     "gzip-js": "~0.3.1",

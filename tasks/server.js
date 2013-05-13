@@ -62,21 +62,19 @@ module.exports = function(grunt) {
         //"\.coffee$": require("grunt-lib-coffee").compile,
         //"\.ts$": require("grunt-lib-typescript").compile,
         "\.js$": function(buffer, req, res, next) {
-          var appDir = options.root + options.appDir;
-          var testDir = options.root + options.testDir;
-          
-          var noApp = req.url.indexOf(appDir) !== 0;
-          var noTest = req.url.indexOf(testDir) !== 0;
+          var moduleDir = _.find(options.moduleDirs, function(dir) {
+            return req.url.indexOf(options.root + dir) === 0;
+          });
 
           // Only process JavaScript that are required modules, this means
           // bailing out early if not in the module path.
-          if (noApp && (noTest || req.url.indexOf("vendor") > 0)) {
+          if (!moduleDir || req.url.indexOf(options.root + "vendor") > 0) {
             return next();
           }
 
           // The module name is just the JavaScript file stripped of the
           // host and location.
-          var moduleName = req.url.split(noApp ? testDir : appDir)[1];
+          var moduleName = req.url.split(moduleDir)[1];
           moduleName = moduleName.slice(1);
 
           // This method allows hooking into the RequireJS toolchain.
