@@ -85,7 +85,7 @@ module.exports = function(grunt) {
               var wrapped = commonJs.convert(moduleName, String(buffer));
               var noDefine = wrapped.indexOf("define(") === -1;
               var noConfig = wrapped.indexOf("require.config") === -1;
-              
+
               if (noDefine && noConfig) {
                 wrapped = [
                   "define(function(require, exports, module) {",

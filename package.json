@@ -40,9 +40,9 @@
   "dependencies": {
     "grunt-lib-stylus": "~0.1",
     "grunt-lib-less": "~0.1",
-    "requirejs": "~2.1",
-    "express": "~3.1",
-    "gzip-js": "~0.3.1",
-    "http-proxy": "~0.8.7"
+    "requirejs": "~2.1.6",
+    "express": "~3.2.5",
+    "gzip-js": "~0.3.2",
+    "http-proxy": "~0.10.2"
   }
 }
