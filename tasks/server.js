@@ -147,9 +147,12 @@ module.exports = function(grunt) {
       },
     });
 
+    // Ensure we have prefix relative.
+    options.prefix = path.normalize(options.prefix);
+
     // Merge maps together.
-    options.map = _.extend({}, options.map, fs.readdirSync(CWD).filter(function(file) {
-      return fs.statSync(file).isDirectory();
+    options.map = _.extend({}, options.map, fs.readdirSync(options.prefix).filter(function(file) {
+      return fs.statSync(path.join(options.prefix, file)).isDirectory();
     }).reduce(function(memo, current) {
       memo[current] = current;
       return memo;
@@ -219,11 +222,11 @@ module.exports = function(grunt) {
       var dirMatch = grunt.file.isDir(options.map[name]) ? "/*" : "";
       site.get(options.root + name + dirMatch, function(req, res, next) {
         // Find filename.
-        var filename = req.url.slice((options.root + name).length)
+        var filename = req.url.slice((options.root + name).length);
         // If there are query parameters, remove them.
         filename = filename.split("?")[0];
 
-        res.sendfile(path.join(options.map[name] + filename));
+        res.sendfile(path.join(options.prefix, options.map[name] + filename));
       });
     });
 
@@ -301,10 +304,27 @@ module.exports = function(grunt) {
       next();
     });
 
+    // Attempt to laod from the prefixed directory first.
+    //site.use(express.static(path.join(CWD, options.prefix)));
+    site.all("*", function(req, res, next) {
+      // If there are query parameters, remove them.
+      var filename = path.join(options.prefix, req.url.split("?")[0]);
+
+      // Detect if the file requested exists in the current prefixed path.
+      fs.exists(filename, function(exists) {
+        // If it doesn't exist hit the homepage.
+        if (!exists) {
+          next();
+        } else {
+          res.sendfile(filename);
+        }
+      });
+    });
+
     // Ensure all routes go home, client side app..
     if (options.pushState) {
       site.all("*", function(req, res) {
-        fs.createReadStream(options.index).pipe(res);
+        fs.createReadStream(path.join(options.prefix, options.index)).pipe(res);
       });
     }
 
