@@ -314,7 +314,7 @@ module.exports = function(grunt) {
       fs.exists(filename, function(exists) {
         // If the file doesn't exist or if it's a folder, let another handler
         // take care of serving.
-        if (!exists || filename.slice(-1) === "/") {
+        if (!exists || filename.slice(-1) === path.sep) {
           next();
         } else {
           res.sendfile(filename);
