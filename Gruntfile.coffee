@@ -8,45 +8,31 @@ module.exports = ->
   @initConfig
 
     jshint:
-      all: ["Gruntfile.js", "tasks/*.js", "<%= nodeunit.tests %>"]
+      all: ["tasks/*.js", "<%= nodeunit.tests %>"]
 
       options:
         jshintrc: ".jshintrc"
 
-    # Before generating any new files, remove any previously-created files.
-    clean:
-      tests: ["tmp"]
-    
     # Configuration to be run (and then tested).
-    bbb_server:
-      default_options:
-        options: {}
-        files:
-          "tmp/default_options": ["test/fixtures/testing", "test/fixtures/123"]
-
-      custom_options:
+    server:
+      default:
         options:
-          separator: ": "
-          punctuation: " !!!"
-
-        files:
-          "tmp/custom_options": ["test/fixtures/testing", "test/fixtures/123"]
+          forever: false
 
     # Unit tests.
     nodeunit:
-      tests: ["test/*_test.js"]
+      tests: ["test/*.js"]
   
   # Actually load this plugin's task(s).
   @loadTasks "tasks"
   
   # These plugins provide necessary tasks.
   @loadNpmTasks "grunt-contrib-jshint"
-  @loadNpmTasks "grunt-contrib-clean"
   @loadNpmTasks "grunt-contrib-nodeunit"
   
   # Whenever the "test" task is run, first clean the "tmp" dir, then run this
   # plugin's task(s), then test the result.
-  @registerTask "test", ["clean", "bbb_server", "nodeunit"]
+  @registerTask "test", ["server", "nodeunit"]
   
   # By default, lint and run all tests.
   @registerTask "default", ["jshint", "test"]

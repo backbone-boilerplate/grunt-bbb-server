@@ -20,6 +20,7 @@ module.exports = function(grunt) {
   var requirejs = require("requirejs");
   var gzip = require("gzip-js");
   var httpProxy = require("http-proxy");
+  var Compiler = require("es6-module-transpiler").Compiler;
 
   // Shorthand Lo-Dash.
   var _ = grunt.util._;
@@ -77,12 +78,22 @@ module.exports = function(grunt) {
           var moduleName = req.url.split(moduleDir)[1];
           moduleName = moduleName.slice(1);
 
+          // I'd rather work with strings here, since buffers aren't widely
+          // supported.
+          buffer = String(buffer);
+
+          // If ES6 modules are enabled in the configuration, convert by
+          // default.
+          if (options.es6) {
+            buffer = new Compiler(buffer, moduleName.slice(-2, 0)).toAMD();
+          }
+
           // This method allows hooking into the RequireJS toolchain.
           requirejs.tools.useLib(function(require) {
             // Convert to AMD if using CommonJS, by default the conversion
             // will ignore modules that already contain a define.
             require(["commonJs"], function(commonJs) {
-              var wrapped = commonJs.convert(moduleName, String(buffer));
+              var wrapped = commonJs.convert(moduleName, buffer);
               var noDefine = wrapped.indexOf("define(") === -1;
               var noConfig = wrapped.indexOf("require.config") === -1;
 

@@ -43,6 +43,7 @@
     "requirejs": "~2.1.6",
     "express": "~3.2.5",
     "gzip-js": "~0.3.2",
-    "http-proxy": "~0.10.2"
+    "http-proxy": "~0.10.2",
+    "es6-module-transpiler": "~0.2.0"
   }
 }
