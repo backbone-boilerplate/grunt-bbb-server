@@ -230,14 +230,15 @@ module.exports = function(grunt) {
 
     // Map static folders to take precedence over redirection.
     Object.keys(options.map).sort().reverse().forEach(function(name) {
-      var dirMatch = grunt.file.isDir(options.map[name]) ? "/*" : "";
+      var normalizePath = path.join(options.prefix, options.map[name]);
+      var dirMatch = grunt.file.isDir(normalizePath) ? "/*" : "";
       site.get(options.root + name + dirMatch, function(req, res, next) {
         // Find filename.
         var filename = req.url.slice((options.root + name).length);
         // If there are query parameters, remove them.
         filename = filename.split("?")[0];
 
-        res.sendfile(path.join(options.prefix, options.map[name] + filename));
+        res.sendfile(path.join(normalizePath, filename));
       });
     });
 
