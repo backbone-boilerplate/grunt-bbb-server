@@ -106,7 +106,7 @@ module.exports = function(grunt) {
               }
 
               res.header("Content-type", "application/javascript");
-              next(wrapped);
+              res.end(wrapped);
             });
           });
         },
@@ -119,10 +119,11 @@ module.exports = function(grunt) {
             paths: ["." + req.url.split("/").slice(0, -1).join("/") + "/"]
           };
 
+
           // Compile the source.
           stylus.compile(String(buffer), opts, function(contents) {
             res.header("Content-type", contentType);
-            next(contents);
+            res.end(contents);
           });
         },
         
@@ -137,7 +138,7 @@ module.exports = function(grunt) {
           // Compile the source.
           less.compile(String(buffer), opts, function(contents) {
             res.header("Content-type", contentType);
-            next(contents);
+            res.end(contents);
           });
         },
 
@@ -152,7 +153,7 @@ module.exports = function(grunt) {
           // Compile the source.
           less.compile(String(buffer), opts, function(contents) {
             res.header("Content-type", contentType);
-            next(contents);
+            res.end(contents);
           });
         },
       },
