@@ -14,6 +14,7 @@ module.exports = function(grunt) {
   var path = require("path");
   var fs = require("fs");
   var https = require("https");
+  var compression = require("compression");
 
   // External libs.
   var express = require("express");
@@ -177,7 +178,7 @@ module.exports = function(grunt) {
 
       // Setting force to true, keeps Grunt from crashing while running the
       // server.
-      grunt.option("force", true);
+      //grunt.option("force", true);
     }
 
     // Make this value more meaningful otherwise you can provide your own keys.
@@ -202,7 +203,7 @@ module.exports = function(grunt) {
 
     // Allow compression to be disabled.
     if (options.gzip !== false) {
-      site.use(express.compress());
+      site.use(compression());
     }
 
     // Go through each compiler and provide an identical serving experience.
@@ -270,7 +271,7 @@ module.exports = function(grunt) {
       }
 
       // Initialize the actual proxy object.
-      var proxy = new httpProxy.HttpProxy(proxyOptions);
+      var proxy = new httpProxy.createProxy(proxyOptions);
 
       // Same thing for these, if you have https boolean set to true, default
       // to internal keys/certs.
