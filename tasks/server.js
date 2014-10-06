@@ -240,7 +240,7 @@ module.exports = function(grunt) {
         // If there are query parameters, remove them.
         filename = filename.split("?")[0];
 
-        res.sendfile(path.join(normalizePath, filename));
+        res.sendFile(path.join(normalizePath, filename), { root: './' });
       });
     });
 
@@ -331,7 +331,7 @@ module.exports = function(grunt) {
         if (!exists || filename.slice(-1) === path.sep) {
           next();
         } else {
-          res.sendfile(filename);
+          res.sendFile(filename, {root: './'});
         }
       });
     });
